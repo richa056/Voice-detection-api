@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Env
+venv/
+.env
+
+# OS
+.DS_Store
+
+# Large audio temp
+*.wav
+*.mp3
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Model files (optional: decide)
+# If hackathon allows, keep models in repo; else remove
+

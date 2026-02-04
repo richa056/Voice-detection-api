@@ -1,8 +1,5 @@
-def predict(audio_path: str, language: str) -> dict:
-    # Dummy predictor until ML model integration
-    return {
-        "classification": "HUMAN",
-        "confidenceScore": 0.55,
-        "explanation": "Dummy predictor (ML model not integrated yet)."
-    }
+from ml.inference import predict_audio
+
+def predict(audio_wav_path: str, language: str) -> dict:
+    return predict_audio(audio_wav_path, language)
 
