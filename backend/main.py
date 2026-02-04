@@ -1,7 +1,7 @@
 import os
 from fastapi import FastAPI, Header, HTTPException
 from backend.schemas import VoiceDetectRequest
-from backend.audio_utils import save_base64_as_mp3, mp3_to_wav
+from backend.audio_utils import save_base64_as_mp3
 from backend.predictor import predict
 
 app = FastAPI(title="Voice Detection API")
@@ -20,7 +20,6 @@ Header(None)):
 
     
     mp3_path = save_base64_as_mp3(payload.audioBase64)
-    wav_path = mp3_to_wav(mp3_path)
     result = predict(mp3_path, payload.language)
 
 
