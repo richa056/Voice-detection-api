@@ -1,5 +1,6 @@
 import base64
 import os
+import re
 import uuid
 
 TMP_DIR = "/tmp"
@@ -7,11 +8,27 @@ TMP_DIR = "/tmp"
 
 def safe_b64decode(data: str) -> bytes:
     """
-    Accepts base64 string that may contain whitespace/newlines
-    and may be missing '=' padding.
+    Robust base64 decode for hackathon testers.
+    Handles:
+    - whitespace/newlines
+    - missing '=' padding
+    - data URI prefix like: data:audio/mp3;base64,...
+    - accidental non-base64 characters
     """
-    data = "".join(data.split())  # remove whitespace/newlines
+    if not data:
+        raise ValueError("Empty base64 input")
 
+    # remove whitespace/newlines
+    data = "".join(data.split())
+
+    # remove "data:...;base64," prefix if present
+    if "base64," in data:
+        data = data.split("base64,", 1)[1]
+
+    # keep only base64 valid characters
+    data = re.sub(r"[^A-Za-z0-9+/=]", "", data)
+
+    # add missing padding
     missing = len(data) % 4
     if missing:
         data += "=" * (4 - missing)
