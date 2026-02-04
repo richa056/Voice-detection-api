@@ -1,4 +1,9 @@
 fastapi
 uvicorn
 pydantic
+numpy
+scikit-learn
+joblib
+librosa
+praat-parselmouth
 
