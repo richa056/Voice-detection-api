@@ -1,51 +1,63 @@
 import base64
 import os
-import re
-import urllib.parse
 import uuid
 
 TMP_DIR = "/tmp"
 
 
-def safe_b64decode(data: str) -> bytes:
-    if not data:
-        raise ValueError("Empty base64 input")
+def _extract_audio_base64(data: str) -> str:
+    """
+    Hackathon tester sometimes sends:
+    'languageTamilaudioFormatmp3audioBase64UklG....'
+    So we locate where actual audio base64 starts.
 
-    # remove whitespace/newlines
+    WAV base64 often starts with: UklG
+    MP3 base64 often starts with: SUQz
+    """
     data = "".join(data.split())
-
-    # decode URL encoding if present
-    if "%" in data:
-        data = urllib.parse.unquote(data)
 
     # remove data URI prefix if present
     if "base64," in data:
         data = data.split("base64,", 1)[1]
 
-    # fix url-safe base64
-    data = data.replace("-", "+").replace("_", "/")
+    wav_idx = data.find("UklG")  # RIFF (WAV)
+    mp3_idx = data.find("SUQz")  # ID3 (MP3)
 
-    # remove all non-base64 chars
-    data = re.sub(r"[^A-Za-z0-9+/=]", "", data)
+    if wav_idx != -1 and (mp3_idx == -1 or wav_idx < mp3_idx):
+        return data[wav_idx:]
+    if mp3_idx != -1:
+        return data[mp3_idx:]
 
-    # pad to multiple of 4
-    missing = len(data) % 4
+    # if markers not found, fallback to original string
+    return data
+
+
+def safe_b64decode(data: str, debug: bool = True) -> bytes:
+    if not data:
+        raise ValueError("Empty base64 input")
+
+    extracted = _extract_audio_base64(data)
+
+    # padding
+    missing = len(extracted) % 4
     if missing:
-        data += "=" * (4 - missing)
+        extracted += "=" * (4 - missing)
 
-    # DEBUG (you can remove later)
-    print("RAW BASE64 FIRST 60:", data[:60])
-    print("RAW LEN:", len(data))
+    if debug:
+        print("RAW LEN:", len(data))
+        print("EXTRACTED FIRST 60:", extracted[:60])
+        print("EXTRACTED LEN:", len(extracted))
+        print("EXTRACTED mod4:", len(extracted) % 4)
 
-    return base64.b64decode(data, validate=False)
+    return base64.b64decode(extracted, validate=False)
 
 
 def save_base64_as_mp3(audio_base64: str) -> str:
-    audio_bytes = safe_b64decode(audio_base64)
+    audio_bytes = safe_b64decode(audio_base64, debug=True)
 
-    mp3_path = os.path.join(TMP_DIR, f"{uuid.uuid4()}.mp3")
-    with open(mp3_path, "wb") as f:
+    audio_path = os.path.join(TMP_DIR, f"{uuid.uuid4()}.mp3")
+    with open(audio_path, "wb") as f:
         f.write(audio_bytes)
 
-    return mp3_path
+    return audio_path
 
